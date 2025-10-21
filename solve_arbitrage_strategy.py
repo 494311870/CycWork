@@ -407,223 +407,130 @@ class ArbitrageStrategyAnalyzer:
         
         return returns_2022, returns_2023, returns_2024
     
-    def generate_report(self, output_file):
-        """生成结果报告文档"""
+    def generate_report(self, template_file, output_file):
+        """生成结果报告文档 - 基于模板填充"""
         print("\n" + "=" * 80)
-        print("生成结果报告文档")
+        print("生成结果报告文档 - 基于模板填充")
         print("=" * 80)
         
-        doc = Document()
+        # Load template document
+        doc = Document(template_file)
+        print(f"已加载模板文档: {template_file}")
+        print(f"模板包含 {len(doc.tables)} 个表格")
         
-        # Title
-        title = doc.add_heading('作业3：指数纳入效应套利策略的实现 - 结果报告', 0)
-        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
-        # Problem 1
-        doc.add_heading('问题一：利用纳入和剔除股票来做套利', 1)
-        
-        doc.add_heading('1.1 纳入和剔除股票的超额收益率', 2)
-        doc.add_paragraph('表1：纳入和剔除股票超额收益率统计')
-        
-        # Table 1
+        # Fill Table 1 - Question 1: Excess returns
+        print("\n填充表1：纳入和剔除股票超额收益率...")
         table1_data = self.results['table1']
-        table = doc.add_table(rows=9, cols=7)
-        table.style = 'Light Grid Accent 1'
+        table1 = doc.tables[0]  # First table in template
         
-        # Header
-        headers = ['Twind', '0', '1', '2', '3', '4', '5']
-        for i, header in enumerate(headers):
-            table.cell(0, i).text = header
-        
-        # Fill data
-        rows_info = [
-            ('纳入指数股票超额收益率 N', 'inc_n'),
-            ('纳入指数股票超额收益率 Mean(base point)', 'inc_mean'),
-            ('纳入指数股票超额收益率 Std Err', 'inc_stderr'),
-            ('剔除指数股票超额收益率 N', 'exc_n'),
-            ('剔除指数股票超额收益率 Mean(base point)', 'exc_mean'),
-            ('剔除指数股票超额收益率 Std Err', 'exc_stderr'),
-            ('纳入与剔除股票超额收益率的差 Difference', 'difference'),
-            ('纳入与剔除股票超额收益率的差 P值', 'p_value')
+        # Table 1 structure: rows 1-8 for data, columns 2-7 for twind 0-5
+        rows_mapping = [
+            ('inc_n', 1),
+            ('inc_mean', 2),
+            ('inc_stderr', 3),
+            ('exc_n', 4),
+            ('exc_mean', 5),
+            ('exc_stderr', 6),
+            ('difference', 7),
+            ('p_value', 8)
         ]
         
-        for row_idx, (label, col) in enumerate(rows_info, 1):
-            table.cell(row_idx, 0).text = label
+        for col_name, row_idx in rows_mapping:
             for t in range(6):
-                value = table1_data.loc[t, col]
+                value = table1_data.loc[t, col_name]
                 if pd.notna(value):
-                    if col in ['inc_n', 'exc_n']:
-                        table.cell(row_idx, t+1).text = str(int(value))
-                    elif col == 'p_value':
-                        table.cell(row_idx, t+1).text = f"{value:.4f}"
+                    if col_name in ['inc_n', 'exc_n']:
+                        table1.cell(row_idx, t+2).text = str(int(value))
+                    elif col_name == 'p_value':
+                        table1.cell(row_idx, t+2).text = f"{value:.4f}"
                     else:
-                        table.cell(row_idx, t+1).text = f"{value:.2f}"
+                        table1.cell(row_idx, t+2).text = f"{value:.2f}"
         
-        doc.add_paragraph()
-        doc.add_paragraph(
-            '分析结论：根据上表数据，纳入指数的股票在公告日及其后几天表现出正的超额收益，'
-            '而剔除指数的股票表现出负的超额收益。这表明存在显著的指数纳入效应和剔除效应。'
-        )
+        print(f"表1填充完成")
         
-        doc.add_heading('1.2 套利策略构建', 2)
-        doc.add_paragraph('表2：Mac的套利策略收益（买入纳入股票，卖空剔除股票）')
-        
-        # Table 2
+        # Fill Table 2 - Question 1: Arbitrage strategy returns
+        print("\n填充表2：Mac的套利策略收益...")
         table2_data = self.results['table2']
-        table2 = doc.add_table(rows=9, cols=7)
-        table2.style = 'Light Grid Accent 1'
+        table2 = doc.tables[1]  # Second table in template
         
-        # Header
-        for i, header in enumerate(headers):
-            table2.cell(0, i).text = header
-        
-        # Fill data
-        rows_info2 = [
-            ('纳入指数股票收益率 N', 'inc_n'),
-            ('纳入指数股票收益率 Mean(base point)', 'inc_mean'),
-            ('纳入指数股票收益率 Std Err', 'inc_stderr'),
-            ('剔除指数股票收益率 N', 'exc_n'),
-            ('剔除指数股票收益率 Mean(base point)', 'exc_mean'),
-            ('剔除指数股票收益率 Std Err', 'exc_stderr'),
-            ('套利策略收益 Difference', 'arb_return'),
-            ('套利策略收益 P值', 'p_value')
+        # Table 2 structure: same as table 1
+        rows_mapping2 = [
+            ('inc_n', 1),
+            ('inc_mean', 2),
+            ('inc_stderr', 3),
+            ('exc_n', 4),
+            ('exc_mean', 5),
+            ('exc_stderr', 6),
+            ('arb_return', 7),
+            ('p_value', 8)
         ]
         
-        for row_idx, (label, col) in enumerate(rows_info2, 1):
-            table2.cell(row_idx, 0).text = label
+        for col_name, row_idx in rows_mapping2:
             for t in range(6):
-                value = table2_data.loc[t, col]
+                value = table2_data.loc[t, col_name]
                 if pd.notna(value):
-                    if col in ['inc_n', 'exc_n']:
-                        table2.cell(row_idx, t+1).text = str(int(value))
-                    elif col == 'p_value':
-                        table2.cell(row_idx, t+1).text = f"{value:.4f}"
+                    if col_name in ['inc_n', 'exc_n']:
+                        table2.cell(row_idx, t+2).text = str(int(value))
+                    elif col_name == 'p_value':
+                        table2.cell(row_idx, t+2).text = f"{value:.4f}"
                     else:
-                        table2.cell(row_idx, t+1).text = f"{value:.2f}"
+                        table2.cell(row_idx, t+2).text = f"{value:.2f}"
         
-        doc.add_paragraph()
-        doc.add_paragraph(
-            'Mac策略存在的问题：\n'
-            '1. 没有考虑股票的系统性风险差异（Beta值不同）\n'
-            '2. 简单的等权重配置可能不是最优的\n'
-            '3. 未考虑行业和市场因素\n'
-            '4. 可能存在流动性风险和执行风险\n\n'
-            '改进建议：\n'
-            '1. 采用配对交易策略，选择Beta值相近、同行业同市场的股票进行配对\n'
-            '2. 根据Beta值进行风险调整\n'
-            '3. 考虑交易成本和冲击成本\n'
-            '4. 设置止损和风险控制机制'
-        )
+        print(f"表2填充完成")
         
-        # Problem 2
-        doc.add_page_break()
-        doc.add_heading('问题二：寻找匹配样本', 1)
-        doc.add_paragraph('表3：匹配结果（Beta匹配精度：绝对误差<1%）')
-        
+        # Fill Table 3 - Question 2: Matching pairs
+        print("\n填充表3：匹配结果...")
         table3_data = self.results['table3']
-        table3 = doc.add_table(rows=len(table3_data)+1, cols=2)
-        table3.style = 'Light Grid Accent 1'
+        table3 = doc.tables[2]  # Third table in template
         
-        table3.cell(0, 0).text = 'Stkcd (纳入指数股票)'
-        table3.cell(0, 1).text = 'Stkcd1 (匹配股票)'
-        
+        # Fill matching pairs (up to 6 pairs as the table has 6 data rows)
         for i, row in table3_data.iterrows():
-            table3.cell(i+1, 0).text = str(int(row['Stkcd']))
-            table3.cell(i+1, 1).text = str(int(row['Stkcd1']))
+            if i < 6:  # Template has 6 empty rows
+                table3.cell(i+1, 0).text = str(int(row['Stkcd']))
+                table3.cell(i+1, 1).text = str(int(row['Stkcd1']))
         
-        # Problem 3
-        doc.add_page_break()
-        doc.add_heading('问题三：利用匹配样本构建套利策略', 1)
-        doc.add_paragraph('表4：Marina套利策略Buy & Hold Returns（基点）')
+        print(f"表3填充完成：{min(len(table3_data), 6)} 对匹配")
         
+        # Fill Table 4 - Question 3: Daily returns
+        print("\n填充表4：Marina套利策略收益...")
         returns = self.results['table4']
-        table4 = doc.add_table(rows=2, cols=11)
-        table4.style = 'Light Grid Accent 1'
+        table4 = doc.tables[3]  # Fourth table in template
         
-        table4.cell(0, 0).text = '交易日'
-        for i in range(10):
-            table4.cell(0, i+1).text = str(i+1)
-        
-        table4.cell(1, 0).text = '收益率'
+        # Fill returns in row 1 (row 0 is header with days 1-10)
         for i, ret in enumerate(returns):
-            table4.cell(1, i+1).text = f"{ret:.2f}"
+            table4.cell(1, i).text = f"{ret:.2f}"
         
-        doc.add_paragraph()
-        doc.add_paragraph('图表：Marina套利策略收益曲线')
-        doc.add_picture('/tmp/q3_returns.png', width=Inches(6))
+        print(f"表4填充完成")
         
-        # Problem 4
-        doc.add_page_break()
-        doc.add_heading('问题四：套利策略在牛熊市中的稳健性检验', 1)
-        
-        doc.add_heading('4.1 2022年6月（牛市）', 2)
-        doc.add_paragraph('表5：2022年6月Buy & Hold Returns（基点）')
-        
+        # Fill Table 5 - Question 4.1: 2022 returns
+        print("\n填充表5：2022年6月收益...")
         returns_2022 = self.results['table5']
-        table5 = doc.add_table(rows=2, cols=11)
-        table5.style = 'Light Grid Accent 1'
+        table5 = doc.tables[4]  # Fifth table in template
         
-        table5.cell(0, 0).text = '交易日'
-        for i in range(10):
-            table5.cell(0, i+1).text = str(i+1)
-        
-        table5.cell(1, 0).text = '收益率'
         for i, ret in enumerate(returns_2022):
-            table5.cell(1, i+1).text = f"{ret:.2f}"
+            table5.cell(1, i).text = f"{ret:.2f}"
         
-        doc.add_paragraph()
-        doc.add_picture('/tmp/q4_1_returns.png', width=Inches(6))
+        print(f"表5填充完成")
         
-        doc.add_heading('4.2 2023年6月（非牛熊市）', 2)
-        doc.add_paragraph('表6：2023年6月Buy & Hold Returns（基点）')
-        
+        # Fill Table 6 - Question 4.2: 2023 returns
+        print("\n填充表6：2023年6月收益...")
         returns_2023 = self.results['table6']
-        table6 = doc.add_table(rows=2, cols=11)
-        table6.style = 'Light Grid Accent 1'
+        table6 = doc.tables[5]  # Sixth table in template
         
-        table6.cell(0, 0).text = '交易日'
-        for i in range(10):
-            table6.cell(0, i+1).text = str(i+1)
-        
-        table6.cell(1, 0).text = '收益率'
         for i, ret in enumerate(returns_2023):
-            table6.cell(1, i+1).text = f"{ret:.2f}"
+            table6.cell(1, i).text = f"{ret:.2f}"
         
-        doc.add_paragraph()
-        doc.add_picture('/tmp/q4_2_returns.png', width=Inches(6))
+        print(f"表6填充完成")
         
-        doc.add_heading('4.3 2024年6月（熊市）', 2)
-        doc.add_paragraph('表7：2024年6月Buy & Hold Returns（基点）')
-        
+        # Fill Table 7 - Question 4.3: 2024 returns
+        print("\n填充表7：2024年6月收益...")
         returns_2024 = self.results['table7']
-        table7 = doc.add_table(rows=2, cols=11)
-        table7.style = 'Light Grid Accent 1'
+        table7 = doc.tables[6]  # Seventh table in template
         
-        table7.cell(0, 0).text = '交易日'
-        for i in range(10):
-            table7.cell(0, i+1).text = str(i+1)
-        
-        table7.cell(1, 0).text = '收益率'
         for i, ret in enumerate(returns_2024):
-            table7.cell(1, i+1).text = f"{ret:.2f}"
+            table7.cell(1, i).text = f"{ret:.2f}"
         
-        doc.add_paragraph()
-        doc.add_picture('/tmp/q4_3_returns.png', width=Inches(6))
-        
-        doc.add_heading('4.4 不同市场环境下的比较分析', 2)
-        doc.add_paragraph(
-            '通过比较2022年牛市、2023年非牛熊市和2024年熊市三个不同市场环境下的套利策略表现，'
-            '我们可以得出以下结论：\n\n'
-            '1. 策略在不同市场环境下的表现存在差异，反映出市场环境对指数纳入效应的影响\n'
-            '2. 牛市环境下，指数纳入效应可能更加显著，套利机会更多\n'
-            '3. 熊市环境下，市场整体下跌可能会削弱指数纳入的正面效应\n'
-            '4. 配对交易策略通过对冲市场风险，在不同市场环境下都能保持相对稳定的表现\n\n'
-            '投资建议：\n'
-            '1. 应根据市场环境调整策略参数和仓位\n'
-            '2. 加强风险管理，设置合理的止损点\n'
-            '3. 持续监控配对股票的相关性和Beta值变化\n'
-            '4. 考虑加入更多风险因子进行多因子套利'
-        )
+        print(f"表7填充完成")
         
         # Save document
         doc.save(output_file)
@@ -633,6 +540,7 @@ class ArbitrageStrategyAnalyzer:
 def main():
     """主函数"""
     excel_file = '作业3 （学生用）指数纳入效应套利策略的实现.xlsx'
+    template_file = '作业3 （学生用）指数纳入效应套利策略的实现.docx'
     output_file = '作业3_指数纳入效应套利策略实现结果.docx'
     
     print("=" * 80)
@@ -649,8 +557,8 @@ def main():
     analyzer.solve_question3()
     analyzer.solve_question4()
     
-    # Generate report
-    analyzer.generate_report(output_file)
+    # Generate report using template
+    analyzer.generate_report(template_file, output_file)
     
     print("\n" + "=" * 80)
     print("所有问题已完成！结果已保存。")
