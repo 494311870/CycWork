@@ -17,6 +17,7 @@
 - `作业3 （学生用）指数纳入效应套利策略的实现.xlsx` - 数据文件
 - `solve_arbitrage_strategy.py` - 主分析脚本
 - `作业3_指数纳入效应套利策略实现结果.docx` - 结果报告文档
+- `CALCULATION_PROCESS.md` - 详细计算过程和公式推导文档
 
 ## 环境要求
 
@@ -80,30 +81,60 @@ python solve_arbitrage_strategy.py
 - 在2024年6月（熊市）环境下测试策略
 - 比较分析不同市场环境对策略表现的影响
 
+## 计算过程说明
+
+本项目详细记录了所有计算过程、使用的条件和公式推导。查看详细说明：
+
+- **终端输出**：运行脚本时，会输出每个问题的详细计算过程和公式
+- **CALCULATION_PROCESS.md**：包含完整的理论推导、公式说明和计算示例
+- **结果报告文档**：Word文档中包含"计算方法与公式推导"专门章节
+
 ## 技术细节
 
 ### 超额收益率计算
 
+**公式（基于CAPM模型）：**
 ```
-超额收益率 = Dretwd - Beta × Dretwdos
+Abret = Dretwd - Beta × Dretwdos
 ```
 
-其中：
-- `Dretwd`: 个股收益率
-- `Beta`: 股票的系统性风险
+**说明：**
+- `Abret`: 超额收益率（Abnormal Return）
+- `Dretwd`: 个股实际收益率
+- `Beta`: 股票的系统性风险系数
 - `Dretwdos`: 市场收益率
+- `Beta × Dretwdos`: 由市场因素解释的预期收益
+- `Abret`: 超出预期的部分，反映指数纳入效应
+
+### Beta匹配算法
+
+**匹配条件（同时满足）：**
+1. 同行业：Nnindcd相同
+2. 同市场：Markettype相同
+3. Beta相近：|Beta - Beta1| < 0.01
+
+**目标函数：**
+```
+j* = argmin |β(i) - β(j)|
+subject to: 同行业、同市场、|Δβ| < 0.01
+```
 
 ### 套利策略收益
 
+**Mac策略（问题一）：**
 ```
-套利收益 = 纳入股票收益率 - 剔除股票收益率
+套利收益 = 纳入股票平均收益率 - 剔除股票平均收益率
 ```
 
 ### 配对交易收益
 
+**Marina策略（问题三）：**
 ```
-配对收益 = 纳入股票收益率 - 匹配股票收益率
+Pair_Return(i,j,t) = Dretwd(i,t) - Dretwd(j,t)
+Portfolio_Return(t) = (1/N) × Σ Pair_Return(i,j,t)
 ```
+
+其中N为有效配对数量，采用等权重方法
 
 ## 结论
 
